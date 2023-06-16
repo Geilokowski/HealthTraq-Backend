@@ -39,4 +39,4 @@ jobs:
        username: ${{ secrets.DOCKER_REPO_USERNAME }} 
        password:  ${{ secrets.DOCKER_REPO_PASSWORD }}
        repository: registry.digitalocean.com/geilostry      
-       tags: master
+       tags: iu/healthtraq-backend
