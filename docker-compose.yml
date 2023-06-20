@@ -1,0 +1,17 @@
+version: '3.8'
+services:
+  healthtraq-db:
+    image: postgres:latest
+    restart: always
+    container_name: healthtraq-db
+    environment:
+      - POSTGRES_DB=healthtraq_db
+      - POSTGRES_USER=healthtraq_user
+      - POSTGRES_PASSWORD=healthtraq_password
+    ports:
+      - '9432:5432'
+    volumes:
+      - db:/var/lib/postgresql/data
+
+volumes:
+  db:

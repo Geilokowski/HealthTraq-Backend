@@ -5,3 +5,13 @@ server:
 spring:
   application:
     name: healthtraq
+  datasource:
+    url: jdbc:postgresql://localhost:9439/healthtraq_db
+    username: healthtraq_user
+    password: healthtraq_password
+  jooq:
+    sql-dialect: org.hibernate.dialect.PostgreSQLDialect
+  jpa:
+    hibernate:
+      # This is fucking insane, but we have also very limited time
+      ddl-auto: update
