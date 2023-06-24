@@ -6,9 +6,9 @@ spring:
   application:
     name: healthtraq
   datasource:
-    url: jdbc:postgresql://localhost:9432/healthtraq_db
-    username: healthtraq_user
-    password: healthtraq_password
+    url: jdbc:postgresql://postgresql-dev.default.svc.cluster.local:5432/healthtraq_db
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
   jooq:
     sql-dialect: org.hibernate.dialect.PostgreSQLDialect
   jpa:
