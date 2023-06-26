@@ -35,6 +35,23 @@
             </exclusions>
         </dependency>
 
+        <!-- Security Dependencies -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt</artifactId>
+            <version>0.9.1</version>
+        </dependency>
+        <!-- From JDK 9 onwards this has to be included manually -->
+        <dependency>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+            <version>2.3.1</version>
+        </dependency>
+
         <!-- Database Dependencies -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -51,7 +68,7 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Generation of OpanAPI Spec -->
+        <!-- Generation of OpenAPI Spec -->
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
@@ -79,6 +96,12 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
+            <version>24.0.1</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 

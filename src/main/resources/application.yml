@@ -2,6 +2,9 @@ server:
   port: 8080
   servlet:
     context-path: /backend
+security:
+  auth-token-validity-duration-hours: 1
+  security-key: abc123!
 spring:
   application:
     name: healthtraq
