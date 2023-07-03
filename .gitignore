@@ -1,5 +1,9 @@
-HELP.md
-target/
+*
+!*/
+!/src/**
+!target/generated-sources/openapi/.openapi-generator-ignore
+!target/generated-sources/openapi/src/gen/java/main/iu/study/api/polar/ApiClient.java
+
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/

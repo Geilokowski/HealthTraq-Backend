@@ -2,6 +2,10 @@ server:
   port: 8080
   servlet:
     context-path: /backend
+polar:
+  client-id: f9cfcba3-7d62-4d8e-8096-9238c75f0f9b
+  client-secret: 8255b491-edf1-478f-8e86-1f2f018cc02c
+  redirect-uri: http://localhost:8080/backend/partners/polar/success
 security:
   auth-token-validity-duration-hours: 1
   security-key: abc123!
