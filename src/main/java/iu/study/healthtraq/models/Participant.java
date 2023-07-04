@@ -26,4 +26,6 @@ public class Participant {
     private int polarUserId;
     @Column(name = "polar_member_id")
     private String polarMemberId;
+    @Column(name = "polar_token")
+    private String polarToken;
 }

@@ -1,5 +1,6 @@
 package iu.study.healthtraq.controller;
 
+import iu.study.api.polar.ApiClient;
 import iu.study.api.polar.ApiException;
 import iu.study.api.polar.api.TrainingDataApi;
 import iu.study.api.polar.model.Exercises;
@@ -17,10 +18,11 @@ import org.springframework.web.servlet.view.RedirectView;
 public class AddParticipantController {
     private final PolarApiService polarApiService;
 
-    @GetMapping(path = "/partners/polar/test")
+    //@GetMapping(path = "/partners/polar/test")
     public ResponseEntity<String> test() throws ApiException {
-        TrainingDataApi trainingDataApi = new TrainingDataApi();
-        int userId = polarApiService.getPolarParticipant(53L).getPolarUserId();
+        var user = polarApiService.getPolarParticipant(53L);
+        int userId = user.getPolarUserId();
+        TrainingDataApi trainingDataApi = new TrainingDataApi(new ApiClient(user.getPolarToken()));
         TransactionLocation txLocation = trainingDataApi.createExerciseTransaction(userId);
         Exercises exes = trainingDataApi.listExercises(txLocation.getTransactionId(), userId);
         return ResponseEntity.ok("success");

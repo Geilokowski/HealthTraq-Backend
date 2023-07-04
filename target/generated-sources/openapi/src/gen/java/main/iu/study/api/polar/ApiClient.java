@@ -27,6 +27,7 @@ import okio.Okio;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.oltu.oauth2.client.request.OAuthClientRequest;
 import org.apache.oltu.oauth2.client.request.OAuthClientRequest.TokenRequestBuilder;
+import org.jetbrains.annotations.NotNull;
 
 import javax.net.ssl.*;
 import java.io.File;
@@ -93,6 +94,8 @@ public class ApiClient {
 
     @Getter
     private Optional<Integer> polarUserId;
+    @Getter
+    private Optional<String> polarToken;
 
     /**
      * Constructor for ApiClient to support access token retry on 401/403 configured with base path, client ID, secret, and additional parameters
@@ -106,15 +109,7 @@ public class ApiClient {
         init();
 
         String tokenUrl = "https://polarremote.com/v2/oauth2/token";
-        if (!"".equals(tokenUrl) && !URI.create(tokenUrl).isAbsolute()) {
-            URI uri = URI.create(getBasePath());
-            tokenUrl = uri.getScheme() + ":" +
-                (uri.getAuthority() != null ? "//" + uri.getAuthority() : "") +
-                tokenUrl;
-            if (!URI.create(tokenUrl).isAbsolute()) {
-                throw new IllegalArgumentException("OAuth2 token URL must be an absolute URL");
-            }
-        }
+
         OkHttpClient.Builder httpClient = new OkHttpClient.Builder();
         httpClient.addInterceptor(chain -> {
             Request request = chain.request();
@@ -127,11 +122,15 @@ public class ApiClient {
             }
 
             Response response = chain.proceed(request);
-            polarUserId = CustomStringUtils
-                    .getResponseBodyString(response)
-                    .flatMap(responseBody -> CustomStringUtils.getFirstGroup(
-                            responseBody, "\"x_user_id\" ?: ?(\\d+?)\\n?}"))
-                    .flatMap(CustomStringUtils::tryParseInteger);
+            Optional<String> maybeResponseBody = CustomStringUtils
+                    .getResponseBodyString(response);
+            maybeResponseBody.ifPresent(responseBodyString -> {
+                polarUserId = CustomStringUtils
+                        .getFirstGroup(responseBodyString, "\"x_user_id\" ?: ?(\\d+?)\\n?}")
+                        .flatMap(CustomStringUtils::tryParseInteger);
+                polarToken = CustomStringUtils
+                        .getFirstGroup(responseBodyString, "\"access_token\" ?: ?\"(.+?)\"\\n?");
+            });
             return response;
         });
 
@@ -149,14 +148,31 @@ public class ApiClient {
         authentications.put("Basic", new HttpBasicAuth());
     }
 
-    public ApiClient(String clientId, String clientSecret) {
+    public ApiClient(String accessToken) {
         init();
-        HttpBasicAuth auth = new HttpBasicAuth();
-        auth.setUsername(clientId);
-        auth.setPassword(clientSecret);
-        authentications.put("OAuth2", auth);
-        authentications.put("Basic", auth);
-        initHttpClient(Collections.emptyList());
+
+        String tokenUrl = "https://polarremote.com/v2/oauth2/token";
+
+        Interceptor interceptor = new Interceptor() {
+            @NotNull
+            @Override
+            public Response intercept(@NotNull Interceptor.Chain chain) throws IOException {
+                Request request = chain.request();
+                request = request.newBuilder()
+                        .header("Authorization", "Bearer " + accessToken)
+                        .build();
+
+                return chain.proceed(request);
+            }
+        };
+
+        authentications.put(
+                "OAuth2",
+                new HttpBasicAuth()
+        );
+        initHttpClient(Collections.<Interceptor>singletonList(interceptor));
+        // Setup authentications (key: authentication name, value: authentication).
+        authentications.put("Basic", new HttpBasicAuth());
     }
 
     private void initHttpClient() {

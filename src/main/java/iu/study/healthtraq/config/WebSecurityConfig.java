@@ -41,7 +41,7 @@ public class WebSecurityConfig {
 
         http.authorizeHttpRequests((authz) -> authz
                 .requestMatchers("/login").permitAll()
-                .requestMatchers("/partners/polar/success").permitAll()
+                .requestMatchers("/partners/polar/start").permitAll()
                 .requestMatchers("/partners/polar/success").permitAll()
                 .requestMatchers("/partners/polar/test").permitAll()
                 .requestMatchers("/swagger-ui/**").permitAll()

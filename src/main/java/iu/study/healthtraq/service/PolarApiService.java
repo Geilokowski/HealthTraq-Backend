@@ -2,7 +2,6 @@ package iu.study.healthtraq.service;
 
 import iu.study.api.polar.ApiClient;
 import iu.study.api.polar.ApiException;
-import iu.study.api.polar.Configuration;
 import iu.study.api.polar.api.UsersApi;
 import iu.study.api.polar.model.Register;
 import iu.study.api.polar.model.User;
@@ -10,7 +9,6 @@ import iu.study.healthtraq.exceptions.DatabaseException;
 import iu.study.healthtraq.models.Participant;
 import iu.study.healthtraq.properties.PolarProperties;
 import iu.study.healthtraq.repositories.ParticipantRepository;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -42,13 +40,7 @@ public class PolarApiService {
                 .orElseThrow(() -> new DatabaseException("participant", "id", id));
     }
 
-    @PostConstruct
-    public void setDefaultApiClient(){
-        ApiClient defaultClient = new ApiClient(polarProperties.getClientId(), polarProperties.getClientSecret());
-        Configuration.setDefaultApiClient(defaultClient);
-    }
-
-    public void createParticipant(@NotNull User polarUser, String memberId){
+    public void createParticipant(@NotNull User polarUser, String token, String memberId){
         if(polarUser.getPolarUserId() == null){
             logger.error("Returned polar user id is null, participant not saved");
             return;
@@ -59,6 +51,7 @@ public class PolarApiService {
                 .lastName(polarUser.getLastName())
                 .polarUserId(Math.toIntExact(polarUser.getPolarUserId()))
                 .polarMemberId(memberId)
+                .polarToken(token)
                 .build();
         participantRepository.save(participant);
     }
@@ -74,10 +67,10 @@ public class PolarApiService {
             String memberId = UUID.randomUUID().toString();
             Register registerRequest = new Register().memberId(memberId);
             User polarUser = usersApi.registerUser(registerRequest);
-            createParticipant(polarUser, memberId);
+            createParticipant(polarUser, apiClient.getPolarToken().get(), memberId);
             logger.info("Polar participant added to system");
         }catch(ApiException ex){
-            if(!ex.getResponseBody().contains("user_already_registered"))
+            if(ex.getResponseBody() == null || !ex.getResponseBody().contains("user_already_registered"))
                 throw ex;
 
             if(apiClient.getPolarUserId().isEmpty()){
@@ -90,14 +83,8 @@ public class PolarApiService {
             if(participantRepository.existsByPolarUserId(polarUserId)){
                 logger.info("User already created in system, not doing it again");
             }else{
-                User registeredUser = usersApi.getUserInformation((long) polarUserId);
-                Participant participant = Participant.builder()
-                        .firstName(registeredUser.getFirstName())
-                        .lastName(registeredUser.getLastName())
-                        .polarUserId(polarUserId)
-                        .polarMemberId(registeredUser.getMemberId())
-                        .build();
-                participantRepository.save(participant);
+                User registeredUser = usersApi.getUserInformation(polarUserId);
+                createParticipant(registeredUser, apiClient.getPolarToken().get(), registeredUser.getMemberId());
                 logger.info("Polar participant added to system");
             }
         }
