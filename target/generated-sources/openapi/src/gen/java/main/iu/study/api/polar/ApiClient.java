@@ -14,6 +14,8 @@
 package iu.study.api.polar;
 
 import iu.study.api.polar.auth.*;
+import iu.study.healthtraq.utils.CustomStringUtils;
+import lombok.Getter;
 import okhttp3.*;
 import okhttp3.internal.http.HttpMethod;
 import okhttp3.internal.tls.OkHostnameVerifier;
@@ -25,7 +27,6 @@ import okio.Okio;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.oltu.oauth2.client.request.OAuthClientRequest;
 import org.apache.oltu.oauth2.client.request.OAuthClientRequest.TokenRequestBuilder;
-import org.jetbrains.annotations.NotNull;
 
 import javax.net.ssl.*;
 import java.io.File;
@@ -90,6 +91,9 @@ public class ApiClient {
 
     private HttpLoggingInterceptor loggingInterceptor;
 
+    @Getter
+    private Optional<Integer> polarUserId;
+
     /**
      * Constructor for ApiClient to support access token retry on 401/403 configured with base path, client ID, secret, and additional parameters
      *
@@ -113,15 +117,22 @@ public class ApiClient {
         }
         OkHttpClient.Builder httpClient = new OkHttpClient.Builder();
         httpClient.addInterceptor(chain -> {
+            Request request = chain.request();
             if(StringUtils.isEmpty(chain.request().header("Authorization"))){
                 String credential = Credentials.basic(clientId, clientSecret);
-                return chain.proceed(chain.request().newBuilder()
+                request = request.newBuilder()
                         .header("Authorization", credential)
                         .header("Accept", "application/json;charset=UTF-8")
-                        .build());
+                        .build();
             }
 
-            return chain.proceed(chain.request());
+            Response response = chain.proceed(request);
+            polarUserId = CustomStringUtils
+                    .getResponseBodyString(response)
+                    .flatMap(responseBody -> CustomStringUtils.getFirstGroup(
+                            responseBody, "\"x_user_id\" ?: ?(\\d+?)\\n?}"))
+                    .flatMap(CustomStringUtils::tryParseInteger);
+            return response;
         });
 
         TokenRequestBuilder builder = OAuthClientRequest
@@ -140,30 +151,12 @@ public class ApiClient {
 
     public ApiClient(String clientId, String clientSecret) {
         init();
-
-        Interceptor interceptor = new Interceptor(){
-            @NotNull
-            @Override
-            public Response intercept(@NotNull Interceptor.Chain chain) throws IOException {
-                if (StringUtils.isEmpty(chain.request().header("Authorization"))) {
-                    String credential = Credentials.basic(clientId, clientSecret);
-                    return chain.proceed(chain.request().newBuilder()
-                            .header("Authorization", credential)
-                            .header("Accept", "application/json;charset=UTF-8")
-                            .build());
-                }
-
-                return chain.proceed(chain.request());
-            }
-        };
-
         HttpBasicAuth auth = new HttpBasicAuth();
         auth.setUsername(clientId);
         auth.setPassword(clientSecret);
         authentications.put("OAuth2", auth);
         authentications.put("Basic", auth);
-        initHttpClient(Collections.<Interceptor>singletonList(interceptor));
-        // Setup authentications (key: authentication name, value: authentication).
+        initHttpClient(Collections.emptyList());
     }
 
     private void initHttpClient() {

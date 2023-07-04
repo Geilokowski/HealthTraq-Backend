@@ -2,13 +2,19 @@ package iu.study.healthtraq.service;
 
 import iu.study.api.polar.ApiClient;
 import iu.study.api.polar.ApiException;
+import iu.study.api.polar.Configuration;
 import iu.study.api.polar.api.UsersApi;
 import iu.study.api.polar.model.Register;
 import iu.study.api.polar.model.User;
+import iu.study.healthtraq.exceptions.DatabaseException;
 import iu.study.healthtraq.models.Participant;
 import iu.study.healthtraq.properties.PolarProperties;
 import iu.study.healthtraq.repositories.ParticipantRepository;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -19,6 +25,8 @@ public class PolarApiService {
     private final PolarProperties polarProperties;
     private final ParticipantRepository participantRepository;
 
+    Logger logger = LoggerFactory.getLogger(PolarApiService.class);
+
     private static final String POLAR_BASE_URL = "https://flow.polar.com/oauth2/authorization";
 
     public String getAuthorizationUrl() {
@@ -28,23 +36,70 @@ public class PolarApiService {
                 "&redirect_uri" + polarProperties.getRedirectUri();
     }
 
+    public Participant getPolarParticipant(long id){
+        return participantRepository
+                .findById(id)
+                .orElseThrow(() -> new DatabaseException("participant", "id", id));
+    }
+
+    @PostConstruct
+    public void setDefaultApiClient(){
+        ApiClient defaultClient = new ApiClient(polarProperties.getClientId(), polarProperties.getClientSecret());
+        Configuration.setDefaultApiClient(defaultClient);
+    }
+
+    public void createParticipant(@NotNull User polarUser, String memberId){
+        if(polarUser.getPolarUserId() == null){
+            logger.error("Returned polar user id is null, participant not saved");
+            return;
+        }
+
+        Participant participant = Participant.builder()
+                .firstName(polarUser.getFirstName())
+                .lastName(polarUser.getLastName())
+                .polarUserId(Math.toIntExact(polarUser.getPolarUserId()))
+                .polarMemberId(memberId)
+                .build();
+        participantRepository.save(participant);
+    }
+
     public void registerParticipant(String code) throws ApiException {
         ApiClient apiClient = new ApiClient(
                 polarProperties.getClientId(),
                 polarProperties.getClientSecret(),
                 code);
-        String memberId = UUID.randomUUID().toString();
-
         UsersApi usersApi = new UsersApi(apiClient);
-        Register registerRequest = new Register().memberId(memberId);
-        User polarUser = usersApi.registerUser(registerRequest);
 
-        Participant participant = Participant.builder()
-                .firstName(polarUser.getFirstName())
-                .lastName(polarUser.getLastName())
-                .polarUserId(polarUser.getPolarUserId())
-                .polarMemberId(memberId)
-                .build();
-        participantRepository.save(participant);
+        try {
+            String memberId = UUID.randomUUID().toString();
+            Register registerRequest = new Register().memberId(memberId);
+            User polarUser = usersApi.registerUser(registerRequest);
+            createParticipant(polarUser, memberId);
+            logger.info("Polar participant added to system");
+        }catch(ApiException ex){
+            if(!ex.getResponseBody().contains("user_already_registered"))
+                throw ex;
+
+            if(apiClient.getPolarUserId().isEmpty()){
+                logger.error("Seems like participant is already registered but user id cant be found");
+                return;
+            }
+
+            int polarUserId = apiClient.getPolarUserId().get();
+            logger.warn("Seems like user is already registered in the system, user id: " + polarUserId);
+            if(participantRepository.existsByPolarUserId(polarUserId)){
+                logger.info("User already created in system, not doing it again");
+            }else{
+                User registeredUser = usersApi.getUserInformation((long) polarUserId);
+                Participant participant = Participant.builder()
+                        .firstName(registeredUser.getFirstName())
+                        .lastName(registeredUser.getLastName())
+                        .polarUserId(polarUserId)
+                        .polarMemberId(registeredUser.getMemberId())
+                        .build();
+                participantRepository.save(participant);
+                logger.info("Polar participant added to system");
+            }
+        }
     }
 }

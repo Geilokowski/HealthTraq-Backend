@@ -1,6 +1,9 @@
 package iu.study.healthtraq.controller;
 
 import iu.study.api.polar.ApiException;
+import iu.study.api.polar.api.TrainingDataApi;
+import iu.study.api.polar.model.Exercises;
+import iu.study.api.polar.model.TransactionLocation;
 import iu.study.healthtraq.service.PolarApiService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +16,15 @@ import org.springframework.web.servlet.view.RedirectView;
 @RequiredArgsConstructor
 public class AddParticipantController {
     private final PolarApiService polarApiService;
+
+    @GetMapping(path = "/partners/polar/test")
+    public ResponseEntity<String> test() throws ApiException {
+        TrainingDataApi trainingDataApi = new TrainingDataApi();
+        int userId = polarApiService.getPolarParticipant(53L).getPolarUserId();
+        TransactionLocation txLocation = trainingDataApi.createExerciseTransaction(userId);
+        Exercises exes = trainingDataApi.listExercises(txLocation.getTransactionId(), userId);
+        return ResponseEntity.ok("success");
+    }
 
     @GetMapping(path = "/partners/polar/success")
     public ResponseEntity<String> participantReturnUri(@RequestParam String code) throws ApiException {

@@ -3,12 +3,14 @@ package iu.study.healthtraq.models;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
+@Data
 @Table(name = "participants")
 public class Participant {
     @Id
@@ -21,7 +23,7 @@ public class Participant {
     private String lastName;
 
     @Column(name = "polar_user_id")
-    private long polarUserId;
+    private int polarUserId;
     @Column(name = "polar_member_id")
     private String polarMemberId;
 }
