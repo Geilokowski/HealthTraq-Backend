@@ -31,7 +31,7 @@ public class PolarApiService {
         return POLAR_BASE_URL +
                 "?response_type=code" +
                 "&client_id=" + polarProperties.getClientId() +
-                "&redirect_uri" + polarProperties.getRedirectUri();
+                "&redirect_uri=" + polarProperties.getRedirectUri();
     }
 
     public Participant getPolarParticipant(long id){
