@@ -105,7 +105,7 @@ public class ApiClient {
      * @param clientSecret client secret
      * @param parameters a {@link java.util.Map} of parameters
      */
-    public ApiClient(String clientId, String clientSecret, String code) {
+    public ApiClient(String redirectUri, String clientId, String clientSecret, String code) {
         init();
 
         String tokenUrl = "https://polarremote.com/v2/oauth2/token";
@@ -136,6 +136,7 @@ public class ApiClient {
 
         TokenRequestBuilder builder = OAuthClientRequest
                 .tokenLocation(tokenUrl)
+                .setRedirectURI(redirectUri)
                 .setCode(code);
         RetryingOAuth retryingOAuth = new RetryingOAuth(httpClient.build(), builder);
         retryingOAuth.setFlow(OAuthFlow.ACCESS_CODE);

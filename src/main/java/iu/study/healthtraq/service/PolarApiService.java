@@ -58,6 +58,7 @@ public class PolarApiService {
 
     public void registerParticipant(String code) throws ApiException {
         ApiClient apiClient = new ApiClient(
+                polarProperties.getRedirectUri(),
                 polarProperties.getClientId(),
                 polarProperties.getClientSecret(),
                 code);
