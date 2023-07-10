@@ -2,9 +2,10 @@ package iu.study.healthtraq.service;
 
 import iu.study.api.polar.ApiClient;
 import iu.study.api.polar.ApiException;
+import iu.study.api.polar.api.ExercisesApi;
+import iu.study.api.polar.api.TrainingDataApi;
 import iu.study.api.polar.api.UsersApi;
-import iu.study.api.polar.model.Register;
-import iu.study.api.polar.model.User;
+import iu.study.api.polar.model.*;
 import iu.study.healthtraq.exceptions.DatabaseException;
 import iu.study.healthtraq.models.Participant;
 import iu.study.healthtraq.properties.PolarProperties;
@@ -15,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -26,6 +28,42 @@ public class PolarApiService {
     Logger logger = LoggerFactory.getLogger(PolarApiService.class);
 
     private static final String POLAR_BASE_URL = "https://flow.polar.com/oauth2/authorization";
+
+    private int getEntityIdFromUrl(@NotNull String url){
+        String[] urlParts = url.split("/");
+        return Integer.parseInt(urlParts[urlParts.length - 1]);
+    }
+
+    public List<ExerciseHashId> getAllExercises(@NotNull Participant participant){
+        try {
+            // Create base API Client
+            ApiClient apiClient = new ApiClient(participant.getPolarToken());
+            // Create needed API
+            ExercisesApi exercisesApi = new ExercisesApi(apiClient);
+
+            return exercisesApi.listExercisesWithoutTransaction(false, false);
+        }catch(ApiException ex){
+            logger.error("Failed to fetch exercises of participant " + participant.getId() + " with exception:", ex);
+            throw new RuntimeException(ex);
+        }
+    }
+
+    public Exercise getExerciseByUrl(
+            @NotNull Participant participant,
+            @NotNull TransactionLocation transactionLocation,
+            @NotNull String url){
+        try {
+            TrainingDataApi trainingDataApi = new TrainingDataApi(new ApiClient(participant.getPolarToken()));
+            return trainingDataApi.getExerciseSummary(
+                    participant.getPolarUserId(),
+                    transactionLocation.getTransactionId(),
+                    getEntityIdFromUrl(url));
+        }catch (ApiException ex){
+            logger.error("Failed to fetch exercise at URL " + url + " from participant " + participant.getId() +
+                    " with exception:", ex);
+            throw new RuntimeException(ex);
+        }
+    }
 
     public String getAuthorizationUrl() {
         return POLAR_BASE_URL +

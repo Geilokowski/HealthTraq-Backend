@@ -2542,9 +2542,7 @@ components:
           items:
             $ref: '#/components/schemas/sample'
         training_load_pro:
-          type: array
-          items:
-            $ref: '#/components/schemas/training-load-pro-sample'
+          $ref: '#/components/schemas/training-load-pro-sample'
 
       description: Training session summary data
     exercisesHashId:
@@ -2671,14 +2669,14 @@ components:
     sample:
       type: object
       properties:
-        recording-rate:
+        recording_rate:
           type: integer
           format: int32
           example: 5
           description: >-
             Sample recording rate in seconds. Null when recording rate is not
             applicable - currently only with RR-data.
-        sample-type:
+        sample_type:
           type: string
           format: byte
           example: '1'
