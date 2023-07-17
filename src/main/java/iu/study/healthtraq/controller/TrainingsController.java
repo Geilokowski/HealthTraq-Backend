@@ -1,14 +1,15 @@
 package iu.study.healthtraq.controller;
 
+import iu.study.healthtraq.models.HealthtraqExercise;
 import iu.study.healthtraq.repositories.ExerciseRepository;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import iu.study.healthtraq.utils.PolarActivity;
 import lombok.RequiredArgsConstructor;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Collections;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 @RestController
@@ -16,21 +17,37 @@ import java.util.List;
 public class TrainingsController {
     private final ExerciseRepository exerciseRepository;
 
-    private record TraningsDTOList(List<TraningsDTO> trainings) { }
+    private record TrainingsDTOList(List<TrainingsDTO> trainings) { }
 
-    private record TraningsDTO(
-            String date){ }
-
-    @Data
-    @AllArgsConstructor
-    private static class TraningsDTOClass {
-        private final String date;
+    private record TrainingsDTO(
+            long id,
+            ZonedDateTime startTime,
+            ZonedDateTime endTime,
+            Float distance,
+            Integer calories,
+            String sourceId,
+            Integer averageHeartRate,
+            Integer maximumHeartRate,
+            PolarActivity activity) {
+        public TrainingsDTO(@NotNull HealthtraqExercise databaseEntry) {
+            this(databaseEntry.getId(),
+                    databaseEntry.getStartTime(),
+                    databaseEntry.getEndTime(),
+                    databaseEntry.getDistance(),
+                    databaseEntry.getCalories(),
+                    databaseEntry.getSourceId(),
+                    databaseEntry.getAverageHeartRate(),
+                    databaseEntry.getMaximumHeartRate(),
+                    databaseEntry.getActivity());
+        }
     }
 
-    @GetMapping(path = "/partners/polar/test")
-    public ResponseEntity<TraningsDTOList> test() {
-        TraningsDTO dto = new TrainingsController.TraningsDTO("10.10.1990");
-
-        return ResponseEntity.ok(new TraningsDTOList(Collections.emptyList()));
+    @GetMapping(path = "/excercises")
+    public ResponseEntity<TrainingsDTOList> test() {
+        List<TrainingsDTO> trainingsDTOs = exerciseRepository
+                .findAll().stream()
+                .map(TrainingsDTO::new)
+                .toList();
+        return ResponseEntity.ok(new TrainingsDTOList(trainingsDTOs));
     }
 }

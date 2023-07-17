@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -28,4 +30,7 @@ public class Participant {
     private String polarMemberId;
     @Column(name = "polar_token")
     private String polarToken;
+
+    @OneToMany(mappedBy = "participant")
+    private List<HealthtraqExercise> exercises;
 }

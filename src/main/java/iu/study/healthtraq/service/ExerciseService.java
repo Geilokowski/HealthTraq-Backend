@@ -44,6 +44,10 @@ public class ExerciseService {
 
         HealthtraqExercise healthtraqExercise = HealthtraqExercise.builder()
                 .sourceId(polarExercise.getId())
+                .averageHeartRate(polarExercise.getHeartRate().getAverage())
+                .maximumHeartRate(polarExercise.getHeartRate().getMaximum())
+                .calories(polarExercise.getCalories())
+                .distance(polarExercise.getDistance())
                 .startTime(getPolarZonedTime(polarExercise.getStartTime(), polarExercise.getStartTimeUtcOffset()))
                 .activity(PolarActivity.fromString(polarExercise.getDetailedSportInfo()))
                 .build();

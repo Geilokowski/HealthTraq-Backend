@@ -29,12 +29,22 @@ public class HealthtraqExercise {
     private Float distance;
 
     @Column(name = "calories")
-    private Long calories;
+    private Integer calories;
 
     @Column(name = "source_id")
     private String sourceId;
 
+    @Column(name = "average_heartrate")
+    private Integer averageHeartRate;
+
+    @Column(name = "maximum_heartrate")
+    private Integer maximumHeartRate;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "activity")
     private PolarActivity activity;
+
+    @ManyToOne
+    @JoinColumn(name = "participant_id")
+    private Participant participant;
 }
