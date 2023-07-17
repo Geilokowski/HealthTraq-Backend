@@ -26,7 +26,8 @@ public class HealthtraqExercise {
     private ZonedDateTime endTime;
 
     @Column(name = "distance")
-    private Long distance;
+    private Float distance;
+
     @Column(name = "calories")
     private Long calories;
 
