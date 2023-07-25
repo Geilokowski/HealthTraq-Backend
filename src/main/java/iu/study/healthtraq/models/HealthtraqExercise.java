@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.Duration;
 import java.time.ZonedDateTime;
 
 @Entity
@@ -22,8 +23,8 @@ public class HealthtraqExercise {
 
     @Column(name = "start_time")
     private ZonedDateTime startTime;
-    @Column(name = "end_time")
-    private ZonedDateTime endTime;
+    @Column(name = "duration")
+    private Duration duration;
 
     @Column(name = "distance")
     private Float distance;

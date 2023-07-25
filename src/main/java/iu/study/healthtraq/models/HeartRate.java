@@ -14,9 +14,6 @@ public class HeartRate {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
 
-    
-
     @Column(name = "time")
     Date time;
-
 }

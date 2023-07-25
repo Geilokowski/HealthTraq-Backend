@@ -1,21 +1,33 @@
 package iu.study.healthtraq.service;
 
 import iu.study.api.polar.model.ExerciseHashId;
+import iu.study.api.polar.model.HeartRate;
 import iu.study.healthtraq.models.HealthtraqExercise;
+import iu.study.healthtraq.models.Participant;
 import iu.study.healthtraq.repositories.ExerciseRepository;
+import iu.study.healthtraq.repositories.ParticipantRepository;
 import iu.study.healthtraq.utils.PolarActivity;
 import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.ZonedDateTime;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class ExerciseService {
+    private final PolarApiService polarApiService;
     private final ExerciseRepository exerciseRepository;
+    private final ParticipantRepository participantRepository;
+
+    Logger logger = LoggerFactory.getLogger(JwtService.class);
 
     /**
      * I dont know if this is correct, someone please check if the timezones are actually how they
@@ -38,17 +50,36 @@ public class ExerciseService {
         return ZonedDateTime.parse(finalString);
     }
 
-    public void createLocalCopyOfPolarExercise(@NotNull ExerciseHashId polarExercise) {
+    @Async
+    public void refreshForParticipant(Participant participant){
+        try {
+            polarApiService
+                    .getAllExercises(participant)
+                    .forEach((exercise) -> createLocalCopyOfPolarExercise(participant, exercise));
+        }catch(Exception ex){
+            logger.error("Failed to fetch exercises for participant " + participant.getId(), ex);
+        }
+
+        participant.setFetchingData(false);
+        participantRepository.save(participant);
+    }
+
+    public void createLocalCopyOfPolarExercise(
+            @NotNull Participant participant,
+            @NotNull ExerciseHashId polarExercise) {
         if(exerciseRepository.existsBySourceId(polarExercise.getId()))
             return;
 
+        final var heartRateNullable = Optional.ofNullable(polarExercise.getHeartRate());
         HealthtraqExercise healthtraqExercise = HealthtraqExercise.builder()
                 .sourceId(polarExercise.getId())
-                .averageHeartRate(polarExercise.getHeartRate().getAverage())
-                .maximumHeartRate(polarExercise.getHeartRate().getMaximum())
+                .participant(participant)
+                .averageHeartRate(heartRateNullable.map(HeartRate::getAverage).orElse(null))
+                .maximumHeartRate(heartRateNullable.map(HeartRate::getMaximum).orElse(null))
                 .calories(polarExercise.getCalories())
                 .distance(polarExercise.getDistance())
                 .startTime(getPolarZonedTime(polarExercise.getStartTime(), polarExercise.getStartTimeUtcOffset()))
+                .duration(Optional.ofNullable(polarExercise.getDuration()).map(Duration::parse).orElse(null))
                 .activity(PolarActivity.fromString(polarExercise.getDetailedSportInfo()))
                 .build();
         exerciseRepository.save(healthtraqExercise);

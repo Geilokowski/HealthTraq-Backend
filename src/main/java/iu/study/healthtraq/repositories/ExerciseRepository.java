@@ -7,4 +7,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ExerciseRepository extends JpaRepository<HealthtraqExercise, Long> {
     boolean existsBySourceId(String sourceId);
+    void deleteAllByParticipantId(long participantId);
 }

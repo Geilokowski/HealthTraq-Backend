@@ -24,6 +24,9 @@ public class Participant {
     @Column(name = "last_name")
     private String lastName;
 
+    @Column(name = "fetching_data")
+    private boolean fetchingData;
+
     @Column(name = "polar_user_id")
     private int polarUserId;
     @Column(name = "polar_member_id")
