@@ -32,7 +32,8 @@ public class WebSecurityConfig {
 
     @Bean
     public AuthenticationManager authenticationManagerBean(HttpSecurity http) throws Exception {
-        AuthenticationManagerBuilder authenticationManagerBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
+        AuthenticationManagerBuilder authenticationManagerBuilder = http
+                .getSharedObject(AuthenticationManagerBuilder.class);
         authenticationManagerBuilder
                 .userDetailsService(userService)
                 .passwordEncoder(passwordEncoder());
@@ -44,7 +45,6 @@ public class WebSecurityConfig {
         http.csrf(AbstractHttpConfigurer::disable);
         http.sessionManagement(configurer -> configurer.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
-        // Not good for security
         http.cors(httpSecurityCorsConfigurer -> {
             final CorsConfiguration configuration = new CorsConfiguration();
             configuration.setAllowedOrigins(Arrays.asList(
